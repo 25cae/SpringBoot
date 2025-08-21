@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CAE Document Search</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        .output {
+            margin-top: 20px;
+            white-space: pre-wrap;
+            background: #f7f7f7;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h2>CAE Document Search</h2>
+    <form id="askForm">
+        <label for="query">Enter your question:</label><br>
+        <textarea id="query" name="query" required></textarea><br>
+        <button type="submit">Ask</button>
+    </form>
+
+    <div id="result" class="output"></div>
+
+    <script>
+        document.getElementById("askForm").addEventListener("submit", async function(event) {
+            event.preventDefault();
+
+            const queryText = document.getElementById("query").value;
+            const responseDiv = document.getElementById("result");
+
+            responseDiv.innerText = "Processing your question...";
+
+            try {
+                const res = await fetch("/ask", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ query: queryText })
+                });
+
+                const data = await res.json();
+                
+                let html = `<p>${data.answer}</p>`;
+
+                if (data.documents && data.documents.length > 0) {
+                    html += `<h4>Source Documents:</h4><ul>`;
+                    html += data.documents.map(doc => 
+                        `<li><a href="${doc.url}" target="_blank">${doc.name}</a></li>`
+                    ).join("");
+                    html += `</ul>`;
+                }
+
+                responseDiv.innerHTML = html;
+
+            } catch (error) {
+                responseDiv.innerText = "Error: Could not retrieve response";
+                console.error(error);
+            }
+        });
+    </script>
+</body>
+</html>
